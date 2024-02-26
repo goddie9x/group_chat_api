@@ -1,57 +1,58 @@
 {
-    "name": "chat_api",
-    "version": "1.0.0",
-    "description": "create my own web",
-    "main": "./src/index.js",
-    "scripts": {
-        "start": "node src/index.js",
-        "nodemon": "nodemon src/index.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+ssh://git@github.com/goddie9x/my_own_web.git"
-    },
-    "keywords": [
-        "my_own_web_api"
-    ],
-    "author": "HoangTam",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/goddie9x/my_own_web_api/issues"
-    },
-    "homepage": "https://github.com/goddie9x/my_own_web_api#readme",
-    "dependencies": {
-        "@pakjiddat/toc": "^1.1.0",
-        "axios": "^0.24.0",
-        "bcrypt-nodejs": "0.0.3",
-        "cheerio": "^1.0.0-rc.10",
-        "cloudinary": "^1.27.0",
-        "connect-flash": "^0.1.1",
-        "cookie-parser": "^1.4.5",
-        "dotenv": "^10.0.0",
-        "express": "^4.17.2",
-        "express-validator": "^6.12.1",
-        "glob-parent": "^6.0.1",
-        "jsonwebtoken": "^8.5.1",
-        "merge-recursive": "0.0.3",
-        "method-override": "^3.0.0",
-        "mongodb": "^4.1.2",
-        "mongoose": "^6.0.7",
-        "mongoose-delete": "^0.5.4",
-        "mongoose-slug-generator": "^1.0.4",
-        "multer": "^1.4.3",
-        "multer-storage-cloudinary": "^4.0.0",
-        "node-cron": "^3.0.0",
-        "nodemailer": "^6.7.0",
-        "passport": "^0.4.1",
-        "passport-local": "^1.0.0",
-        "serverless-http": "^2.7.0",
-        "shortid": "^2.2.16",
-        "socket.io": "^4.2.0",
-        "valid-url": "^1.0.9"
-    },
-    "devDependencies": {
-        "nodemon": "^2.0.13"
-    }
+  "name": "chat_api",
+  "version": "1.0.0",
+  "description": "create my own web",
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "nodemon": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "vercel-build": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/goddie9x/my_own_web.git"
+  },
+  "keywords": [
+    "my_own_web_api"
+  ],
+  "author": "HoangTam",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/goddie9x/my_own_web_api/issues"
+  },
+  "homepage": "https://github.com/goddie9x/my_own_web_api#readme",
+  "dependencies": {
+    "@pakjiddat/toc": "^1.1.0",
+    "axios": "^0.24.0",
+    "bcrypt-nodejs": "0.0.3",
+    "cheerio": "^1.0.0-rc.10",
+    "cloudinary": "^1.27.0",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.2",
+    "express-validator": "^6.12.1",
+    "glob-parent": "^6.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "merge-recursive": "0.0.3",
+    "method-override": "^3.0.0",
+    "mongodb": "^4.1.2",
+    "mongoose": "^6.0.7",
+    "mongoose-delete": "^0.5.4",
+    "mongoose-slug-generator": "^1.0.4",
+    "multer": "^1.4.3",
+    "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^3.0.0",
+    "nodemailer": "^6.7.0",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "serverless-http": "^2.7.0",
+    "shortid": "^2.2.16",
+    "socket.io": "^4.2.0",
+    "valid-url": "^1.0.9"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.13"
+  }
 }
