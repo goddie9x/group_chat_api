@@ -7,12 +7,15 @@ const ALLOWED_ORIGINS = [
 ];
 
 module.exports = function corsMiddleware(req, res, next) {
-    let origin = req.headers.origin;
-    let isOriginAllowed = ALLOWED_ORIGINS.includes(origin);
-    let theOrigin = (isOriginAllowed) ? origin : '*';
+    const origin = req.headers.origin;
+    console.log(origin);
+    const isOriginAllowed = ALLOWED_ORIGINS.includes(origin);
+    console.log(isOriginAllowed);
+    const theOrigin = (isOriginAllowed) ? origin : '*';
     res.header("Access-Control-Allow-Origin", theOrigin);
     res.header('Access-Control-Allow-Methods', (isOriginAllowed) ? 'GET,PUT,POST,DELETE,PATCH,OPTIONS' : '');
     res.header('Access-Control-Allow-Credentials', isOriginAllowed);
-    res.header("Access-Control-Allow-Headers", isOriginAllowed ? "Authorization, Origin, X-Requested-With, Content-Type, X-Auth-Token, Accept" : '');
+    res.header("Access-Control-Allow-Headers", isOriginAllowed ? "*" : '');
+
     next();
 }
