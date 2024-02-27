@@ -4,15 +4,19 @@ const Dashboard = require('../models/Dashboard');
 const { multipleMongooseToObjects, mongooseToObject } = require('../../utils/mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt-nodejs');
+const getCurrentWeek = require('../../utils/getCurrentWeek');
+const startSendMail = require('../../utils/sendAmail');
+
 const ITEM_PER_PAGE = 8;
 const SALT_ROUNDS = 10;
 const PRE_CLASSMATE_STRING = 'UHC';
-const startSendMail = require('../../utils/sendAmail');
 class UserController {
     index(req, res) {
+        const currentWeek = getCurrentWeek();
         const dataDashBoardUpdate = {
             $inc: { amountConnectPerMonth: 1 },
         };
+
         dataDashBoardUpdate.$inc[`amountConnectAnalyticsMonthByWeek.${currentWeek}`] = 1;
         Dashboard.findOneAndUpdate({}, dataDashBoardUpdate)
             .then(() => {
@@ -27,6 +31,7 @@ class UserController {
         const account = req.body.account;
         const password = req.body.password;
         const email = req.body.email;
+
         if (!email) {
             res.status(403).json({ message: 'email must not be empty' });
             return;
@@ -38,6 +43,7 @@ class UserController {
         const checkEmailExit = User.findOne({
             email: email
         });
+
         Promise.all([checkAccountExit, checkEmailExit])
             .then(([accountExit, emailExit]) => {
                 if (accountExit) {
@@ -100,6 +106,7 @@ class UserController {
         const { account, password } = req.body;
         const checkDeleted = User.findOneDeleted({ account: account });
         const checkAccount = User.findOne({ account: account });
+        
         Promise.all([checkDeleted, checkAccount])
             .then(([deleted, account]) => {
                 if (deleted) {
@@ -137,7 +144,7 @@ class UserController {
                     res.json(userInfo);
                     return;
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     res.status(404).json('404');
                     return;
                 });
@@ -165,10 +172,10 @@ class UserController {
                         });
                 } else {
                     User.findOne({
-                            email: {
-                                $in: userInfo.email,
-                            }
-                        })
+                        email: {
+                            $in: userInfo.email,
+                        }
+                    })
                         .then((data) => {
                             if (data && data.length > 0) {
                                 res.status(500).json({ message: 'Email existed' });
@@ -417,51 +424,51 @@ class UserController {
                 case 'delete':
                     {
                         User.delete({ '_id': userIds, role: { $gte: currenUserRole } })
-                        .then(
-                            function(done) {
-                                res.status(200).json('done');
-                            }
-                        )
-                        .catch((err) => {
-                            console.log(err);
-                            res.status(500).json('error');
-                        });
+                            .then(
+                                function (done) {
+                                    res.status(200).json('done');
+                                }
+                            )
+                            .catch((err) => {
+                                console.log(err);
+                                res.status(500).json('error');
+                            });
                         break;
                     }
                 case 'restore':
                     {
                         User.restore({ '_id': userIds, role: { $gte: currenUserRole } })
-                        .then(
-                            function(done) {
-                                res.status(200).json('done');
-                            }
-                        )
-                        .catch((err) => {
-                            console.log(err);
-                            res.status(500).json('error');
-                        });
+                            .then(
+                                function (done) {
+                                    res.status(200).json('done');
+                                }
+                            )
+                            .catch((err) => {
+                                console.log(err);
+                                res.status(500).json('error');
+                            });
                         break;
                     }
                 case 'forceDelete':
                     {
                         User.deleteMany({ '_id': userIds, role: { $gte: currenUserRole } })
-                        .then(
-                            function(data) {
-                                const amount = data.deletedCount;
-                                Dashboard.findOneAndUpdate({}, { $inc: { amountUser: -amount } })
-                                    .then(() => {
-                                        res.status(200).json('done');
-                                    })
-                                    .catch((err) => {
-                                        console.log(err);
-                                        res.status(200).json('done');
-                                    });
-                            }
-                        )
-                        .catch((err) => {
-                            console.log(err);
-                            res.status(500).json('error');
-                        });
+                            .then(
+                                function (data) {
+                                    const amount = data.deletedCount;
+                                    Dashboard.findOneAndUpdate({}, { $inc: { amountUser: -amount } })
+                                        .then(() => {
+                                            res.status(200).json('done');
+                                        })
+                                        .catch((err) => {
+                                            console.log(err);
+                                            res.status(200).json('done');
+                                        });
+                                }
+                            )
+                            .catch((err) => {
+                                console.log(err);
+                                res.status(500).json('error');
+                            });
                         break;
                     }
                 case 'editRole':
@@ -470,7 +477,7 @@ class UserController {
                         if (role > currenUserRole) {
                             User.updateMany({ '_id': userIds, role: { $gte: currenUserRole } }, { $set: { role: req.body.role } })
                                 .then(
-                                    function(done) {
+                                    function (done) {
                                         res.status(200).json('done');
                                     }
                                 )
