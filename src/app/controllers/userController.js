@@ -335,7 +335,7 @@ class UserController {
                     startSendMail({
                         to: emailCheck,
                         subject: 'Khôi phục tài khoản',
-                        html: `<div style="text-align: center;color:#fff;background-color:#0a1929;padding:16px;border-radius:10px;"><h2>Bạn đã yêu cầu khôi phục tài khoản tại trang TE11</h2>
+                        html: `<div style="text-align: center;color:#fff;background-color:#0a1929;padding:16px;border-radius:10px;"><h2>Bạn đã yêu cầu khôi phục tài khoản tại trang TChat</h2>
                             <p>Bấm vào <a href="${process.env.MAIN_CLIENT_SITE + '/user/reset-password/' + tokenRestore}">link này</a> để khôi phục mật khẩu</p>
                             <p>Lưu ý: Link chỉ có hiệu lực trong vòng 10p</p><div>`,
                     }, (err, info) => {

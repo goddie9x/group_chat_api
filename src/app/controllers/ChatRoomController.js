@@ -18,18 +18,18 @@ class ChatRoomController {
     }
     create(req, res) {
         const { topic, maximum, tags } = req.body;
-        const creater = req.data.currentUser;
+        const creator = req.data.currentUser;
         ChatRoom.create({
-                topic,
-                maximum,
-                tags,
-                creater: { username: creater.fullName || creater.account, userId: creater._id, avatar: creater.image },
-                users: [{
-                    username: creater.fullName || creater.account,
-                    userId: creater._id,
-                    avatar: creater.image,
-                }],
-            })
+            topic,
+            maximum,
+            tags,
+            creator: { username: creator.fullName || creator.account, userId: creator._id, avatar: creator.image },
+            users: [{
+                username: creator.fullName || creator.account,
+                userId: creator._id,
+                avatar: creator.image,
+            }],
+        })
             .then(chatRoom => {
                 res.status(200).json(chatRoom._id);
             })
@@ -39,23 +39,28 @@ class ChatRoomController {
             });
     }
     search(req, res) {
-        const search = req.query.search;
-        const regex = '.*' + search + '.*';
-        ChatRoom.find({ $or: [{ tags: { $elemMatch: { $regex: regex } } }, { topic: { $regex: regex } }] })
-            .then(chatRooms => {
-                const rooms = chatRooms.map(chatRoom => {
-                    return {
-                        url: '/room-chat/' + chatRoom._id,
-                        value: chatRoom.topic,
-                        tags: chatRoom.tags,
-                    }
+        const search = req.query.search?.trim();
+        if (search == null || search.length < 1) {
+            res.status(404).json('Not found');
+        }
+        else {
+            const regex = '.*' + search + '.*';
+            ChatRoom.find({ $or: [{ tags: { $elemMatch: { $regex: regex } } }, { topic: { $regex: regex } }, { _id: { $regex: regex } }] })
+                .then(chatRooms => {
+                    const rooms = chatRooms.map(chatRoom => {
+                        return {
+                            url: '/room-chat/' + chatRoom._id,
+                            value: chatRoom.topic,
+                            tags: chatRoom.tags,
+                        }
+                    });
+                    res.json(rooms);
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json(err);
                 });
-                res.json(rooms);
-            })
-            .catch(err => {
-                console.log(err);
-                res.status(500).json(err);
-            });
+        }
     }
     join(req, res) {
         const { _id, fullName, account, image } = req.data.currentUser;
@@ -65,7 +70,7 @@ class ChatRoomController {
             ChatRoom.findOne({ _id: roomId })
                 .then(chatRoom => {
                     if (chatRoom) {
-                        if (chatRoom.users.find(user => user.userId === userId)) {
+                        if (chatRoom.users.find(user => user.userId == userId)) {
                             res.json(chatRoom);
                         } else if (chatRoom.users.length >= chatRoom.maximum) {
                             res.status(400).json({
@@ -101,18 +106,18 @@ class ChatRoomController {
     leave(req, res) {
         const userId = req.params.id;
         ChatRoom.updateMany({
+            users: {
+                $elemMatch: {
+                    userId
+                }
+            }
+        }, {
+            $pull: {
                 users: {
-                    $elemMatch: {
-                        userId
-                    }
+                    userId
                 }
-            }, {
-                $pull: {
-                    users: {
-                        userId
-                    }
-                }
-            })
+            }
+        })
             .then(chatRoom => {
                 res.json(chatRoom);
             })
@@ -123,17 +128,17 @@ class ChatRoomController {
     }
     update(req, res) {
         const { topic, maximum, tags } = req.body;
-        const creater = req.data.currentUser;
+        const creator = req.data.currentUser;
         ChatRoom.findOneAndUpdate({
-                _id: req.params.id,
-                creater: {
-                    userId: creater._id
-                }
-            }, {
-                topic,
-                maximum,
-                tags,
-            })
+            _id: req.params.id,
+            creator: {
+                userId: creator._id
+            }
+        }, {
+            topic,
+            maximum,
+            tags,
+        })
             .then(chatRoom => {
                 res.json(chatRoom);
             })

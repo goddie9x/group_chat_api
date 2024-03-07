@@ -17,7 +17,7 @@ const io = require('socket.io')(server, {
         methods: ["GET", "POST"]
     }
 });
-const connectIo = require('./config/socket/index');
+const connectIo = require('./app/socket/index');
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
