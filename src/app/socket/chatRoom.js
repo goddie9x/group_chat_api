@@ -8,7 +8,7 @@ const socketToRoom = {};
 module.exports = (io, socket) => {
     const chatRoomUpdated = () => {
         io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
-            message: 'new chat room created',
+            message: 'let\'s update list chat room',
         });
     };
 

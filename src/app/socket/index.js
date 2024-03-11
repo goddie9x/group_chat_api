@@ -12,6 +12,7 @@ const connectIo = (io) => {
             handleSocketDisconnect,
         } = require('./chatRoom.js')(io, socket);
         socket.on(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, chatRoomUpdated);
+        socket.on(CHAT_CHANNELS.NOTICE_CHATROOM_UPDATED_STATUS, chatRoomUpdated);
         socket.on(CHAT_CHANNELS.USER_CONNECTED, userConnected);
         socket.on(CHAT_CHANNELS.USER_VIDEO_CONNECTED, userVideoConnected);
         socket.on(CHAT_CHANNELS.NEW_MESSAGE, userChat);
