@@ -1,40 +1,77 @@
 const ChatRoomModel = require('../../app/models/ChatRoom');
 const { CHAT_CHANNELS } = require('../../config/socketChanel');
 
-const users = {};
+const roomVideos = {};
 
-const socketToRoom = {};
-
-module.exports = (io, socket) => {
+module.exports = (io, socket, users, rooms) => {
     const chatRoomUpdated = () => {
         io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
             message: 'let\'s update list chat room',
         });
     };
+    const findItemBySocketId = (targetMap, socketId, hasMetadata = false) => {
+        const listKey = Object.keys(targetMap);
+        const targetKey = hasMetadata ?
+            listKey.find(key => targetMap[key]?.items?.includes(socketId))
+            : listKey.find(key => targetMap[key]?.includes(socketId));
 
+        return {
+            key: targetKey,
+            value: targetMap[targetKey]
+        }
+    }
+    const handleMapSocketWithTargetId = (targetMap, targetId, metadata = false) => {
+        const socketId = socket.id;
+
+        if (metadata) {
+            if (targetMap[targetId]) {
+                if (!targetMap[targetId].items.includes(socketId)) {
+                    targetMap[targetId].items.push(socketId);
+                }
+            }
+            else {
+                targetMap[targetId] = {
+                    items: [socketId],
+                    ...metadata
+                };
+            }
+        }
+        else {
+            if (targetMap[targetId]) {
+                if (!targetMap[targetId].includes(socketId)) {
+                    targetMap[targetId].push(socketId);
+                }
+            }
+            else {
+                targetMap[targetId] = [socketId];
+            }
+        }
+    }
     const userConnected = (data) => {
         const {
-            _id,
+            roomId,
             username,
+            userId
         } = data;
+        handleMapSocketWithTargetId(users, userId);
+        handleMapSocketWithTargetId(rooms, roomId);
 
         io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
             message: 'user connected',
         });
 
-        io.emit(CHAT_CHANNELS.JOIN_CHAT_ROOM({ roomId: _id }), {
+        io.emit(CHAT_CHANNELS.JOIN_CHAT_ROOM({ roomId }), {
             username,
         });
     };
-    const userVideoConnected = (roomId) => {
-        if (users[roomId]) {
-            users[roomId].push(socket.id);
-        } else {
-            users[roomId] = [socket.id];
-        }
-        socketToRoom[socket.id] = roomId;
-        const usersInThisRoom = users[roomId].filter(id => id !== socket.id);
-        socket.emit(CHAT_CHANNELS.VIDEO_JOIN_CHAT_ROOM({ roomId }), usersInThisRoom);
+    const userVideoConnected = ({ roomId, userId }) => {
+        handleMapSocketWithTargetId(users, userId);
+        handleMapSocketWithTargetId(rooms, roomId);
+        const socketId = socket.id;
+        const { value: currentUser } = findItemBySocketId(users, socketId);
+
+        const listSocketInThisRoomExceptCurrentUser = rooms[roomId].filter(id => !currentUser?.includes(id));
+        socket.emit(CHAT_CHANNELS.VIDEO_JOIN_CHAT_ROOM({ roomId }), listSocketInThisRoomExceptCurrentUser);
     }
     const userSendingSignal = (payload) => {
         io.to(payload.userToSignal).emit(CHAT_CHANNELS.USER_RECEIVED_SIGNAL,
@@ -61,56 +98,8 @@ module.exports = (io, socket) => {
         });
     }
 
-    const handleSocketDisconnect = ({
-        roomId,
-        userId,
-    }) => {
-        /* const currentSocketId = socket.id;
-        const listUserId = Object.keys(mapUserWithSocket);
-        const listRoomId = Object.keys(rooms);
-
-        userId = userId ?? listUserId.find(userId => mapUserWithSocket[userId].includes(currentSocketId));
-        if (userId) {
-            roomId = roomId ?? listRoomId.find(roomId => rooms[roomId] && rooms[roomId][userId].includes(currentSocketId));
-            if (roomId) {
-                if (!rooms[roomId]) {
-                    userLeave({
-                        _id: roomId,
-                        userId
-                    });
-                }
-            }
-        }
-        for (let userIdToCkeck of listUserId) {
-            if (mapUserWithSocket[userIdToCkeck].includes(currentSocketId)) {
-                mapUserWithSocket[userIdToCkeck] = mapUserWithSocket[userIdToCkeck].filter(x => x != currentSocketId);
-                break;
-            }
-        }
-        listRoomId.forEach(roomIdToCheck => {
-            const listUserIdInRoom = Object.keys(rooms[roomIdToCheck]);
-
-            listUserIdInRoom.forEach(userIdToCheck => {
-                if ([userIdToCheck] && rooms[roomIdToCheck][userIdToCheck].includes(currentSocketId)) {
-                    rooms[roomIdToCheck][userIdToCheck] = rooms[roomIdToCheck][userIdToCheck].filter(x => x == currentSocketId);
-                }
-            })
-        });
-        console.log(mapUserWithSocket);
-        console.log(rooms); */
-        const roomID = socketToRoom[socket.id];
-        let room = users[roomID];
-        if (room) {
-            room = room.filter(id => id !== socket.id);
-            users[roomID] = room;
-        }
-    };
-    const userLeave = (data) => {
-        const {
-            _id,
-            userId,
-        } = data;
-        ChatRoomModel.findById({ _id })
+    const removeUserInRoom = (roomId, userId) => {
+        ChatRoomModel.findById(roomId)
             .then((chatRoom) => {
                 if (chatRoom) {
                     const { users } = chatRoom;
@@ -129,13 +118,11 @@ module.exports = (io, socket) => {
                             users.splice(index, 1);
                             chatRoom.save()
                                 .then(() => {
-                                    io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
-                                        message: 'user left',
-                                    });
+
                                 })
                                 .catch(err => console.log(err));
                         }
-                        io.emit(CHAT_CHANNELS.LEAVE_CHAT_ROOM({ roomId: _id }), {
+                        io.emit(CHAT_CHANNELS.LEAVE_CHAT_ROOM({ roomId }), {
                             username,
                         });
                     } else {
@@ -145,6 +132,29 @@ module.exports = (io, socket) => {
                     console.log('chat room not found');
                 }
             });
+    }
+    const handleSocketDisconnect = (data) => {
+        const socketId = socket.id;
+        try {
+            let userId = data?.userId??findItemBySocketId(users, socketId).key;
+            let roomId = data?.roomId??findItemBySocketId(rooms, socketId).key;
+            if (userId && roomId) {
+                users[userId] = users[userId].filter(socket => socket != socketId);
+                rooms[roomId] = rooms[roomId].filter(socket => socket != socketId);
+                if (users[userId].length < 1) {
+                    removeUserInRoom(roomId, userId);
+                }
+                io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
+                    message: 'user left',
+                });
+            }
+
+        }
+        catch (e) {
+            //console.log(e);
+        }
+    };
+    const userLeave = (data) => {
     };
     return {
         chatRoomUpdated,
