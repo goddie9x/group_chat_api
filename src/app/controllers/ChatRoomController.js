@@ -1,5 +1,4 @@
 const ChatRoom = require('../models/ChatRoom');
-
 class ChatRoomController {
     index(req, res) {
         const page = req.params.page;
@@ -7,6 +6,8 @@ class ChatRoomController {
         const limit = 12;
         const skip = (reload == 1) ? 0 : ((page - 1) * limit);
         ChatRoom.find({})
+            .populate('creator')
+            .populate('users')
             .sort({ createdAt: -1 })
             .skip(skip)
             .then(chatRooms => {
@@ -14,7 +15,7 @@ class ChatRoomController {
             })
             .catch(err => {
                 res.status(500).json(err);
-            })
+            });
     }
     create(req, res) {
         const { topic, maximum, tags } = req.body;
@@ -23,18 +24,13 @@ class ChatRoomController {
             topic,
             maximum,
             tags,
-            creator: { username: creator.fullName || creator.account, userId: creator._id, avatar: creator.image },
-            users: [{
-                username: creator.fullName || creator.account,
-                userId: creator._id,
-                avatar: creator.image,
-            }],
+            creator: creator._id,
+            users: [creator._id],
         })
             .then(chatRoom => {
                 res.status(200).json(chatRoom._id);
             })
             .catch(err => {
-                console.log(err);
                 res.status(500).send(err);
             });
     }
@@ -52,7 +48,7 @@ class ChatRoomController {
                             url: '/room-chat/' + chatRoom._id,
                             value: chatRoom.topic,
                             tags: chatRoom.tags,
-                        }
+                        };
                     });
                     res.json(rooms);
                 })
@@ -63,30 +59,27 @@ class ChatRoomController {
         }
     }
     join(req, res) {
-        const { _id, fullName, account, image } = req.data.currentUser;
-        const userId = _id.toString();
+        const userId = req.data.currentUser._id.toString();
         const roomId = req.params.id;
         if (roomId.match(/^[0-9a-fA-F]{24}$/)) {
             ChatRoom.findOne({ _id: roomId })
+                .populate('creator')
+                .populate('users')
                 .then(chatRoom => {
                     if (chatRoom) {
-                        if (chatRoom.users.find(user => user.userId == userId)) {
+                        if (chatRoom.users.findIndex(user => user._id == userId) > -1) {
                             res.json(chatRoom);
                         } else if (chatRoom.users.length >= chatRoom.maximum) {
                             res.status(400).json({
                                 message: 'This room is full',
                             });
                         } else {
-                            chatRoom.users.push({
-                                userId,
-                                username: fullName || account,
-                                avatar: image,
-                            });
+                            chatRoom.users.push(userId);
                             return chatRoom.save();
                         }
                     } else {
                         res.status(400).json({
-                            message: 'This room is not exist',
+                            message: 'This room does not exist',
                         });
                     }
                 })
@@ -99,23 +92,17 @@ class ChatRoomController {
                 });
         } else {
             res.status(400).json({
-                message: 'This room is not exist',
+                message: 'This room does not exist',
             });
         }
     }
     leave(req, res) {
         const userId = req.params.id;
         ChatRoom.updateMany({
-            users: {
-                $elemMatch: {
-                    userId
-                }
-            }
+            users: userId
         }, {
             $pull: {
-                users: {
-                    userId
-                }
+                users: userId
             }
         })
             .then(chatRoom => {
@@ -131,9 +118,7 @@ class ChatRoomController {
         const creator = req.data.currentUser;
         ChatRoom.findOneAndUpdate({
             _id: req.params.id,
-            creator: {
-                userId: creator._id
-            }
+            creator: creator._id
         }, {
             topic,
             maximum,

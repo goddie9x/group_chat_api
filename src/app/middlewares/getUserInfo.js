@@ -28,7 +28,6 @@ module.exports = function getUserInfo(req, res, next) {
                     next();
                 });
         } catch (err) {
-            console.log(err);
             next();
         }
     }

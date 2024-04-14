@@ -15,6 +15,7 @@ const connectIo = (io) => {
             userSendingSignal,
             returningSignal,
             handleSocketDisconnect,
+            handleUserOffCall,
             userLeave,
         } = require('./chatRoom.js')(io, socket, users, rooms);
         socket.on(CHAT_CHANNELS.USER_CONNECTED, userConnected);
@@ -24,6 +25,7 @@ const connectIo = (io) => {
         socket.on(CHAT_CHANNELS.NEW_MESSAGE, userChat);
         socket.on(CHAT_CHANNELS.SENDING_SIGNAL, userSendingSignal);
         socket.on(CHAT_CHANNELS.RETURNING_SIGNAL, returningSignal);
+        socket.on(CHAT_CHANNELS.USER_OFF_CALL, handleUserOffCall);
         socket.on(CHAT_CHANNELS.USER_LEAVE, handleSocketDisconnect);
         socket.on('disconnect', () => {
             try {

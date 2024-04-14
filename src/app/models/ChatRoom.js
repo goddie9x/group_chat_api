@@ -1,11 +1,13 @@
 const mongoose = require('../../config/db');
+const User = require('./User');
+const Schema = mongoose.Schema;
 
 const ChatRoomSchema = new mongoose.Schema({
     topic: String,
     maximum: Number,
-    creator: { username: String, userId: String, avatar: String },
+    creator: { type: Schema.Types.ObjectId, ref: 'User' },
     tags: [String],
-    users: [{ username: String, userId: String, avatar: String }],
+    users: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('ChatRoom', ChatRoomSchema)

@@ -55,7 +55,6 @@ module.exports = (io, socket, users, rooms) => {
         } = data;
         handleMapSocketWithTargetId(users, userId);
         handleMapSocketWithTargetId(rooms, roomId);
-
         io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
             message: 'user connected',
         });
@@ -64,21 +63,22 @@ module.exports = (io, socket, users, rooms) => {
             username,
         });
     };
-    const userVideoConnected = ({ roomId, userId }) => {
-        handleMapSocketWithTargetId(users, userId);
-        handleMapSocketWithTargetId(rooms, roomId);
-        const socketId = socket.id;
-        const { value: currentUser } = findItemBySocketId(users, socketId);
-
-        const listSocketInThisRoomExceptCurrentUser = rooms[roomId].filter(id => !currentUser?.includes(id));
-        socket.emit(CHAT_CHANNELS.VIDEO_JOIN_CHAT_ROOM({ roomId }), listSocketInThisRoomExceptCurrentUser);
+    const userVideoConnected = ({ roomId, userConnected }) => {
+        handleMapSocketWithTargetId(users, userConnected._id);
+        handleMapSocketWithTargetId(roomVideos, roomId);
+        io.emit(CHAT_CHANNELS.VIDEO_JOIN_CHAT_ROOM({ roomId }), userConnected);
     }
-    const userSendingSignal = (payload) => {
-        io.to(payload.userToSignal).emit(CHAT_CHANNELS.USER_RECEIVED_SIGNAL,
-            { signal: payload.signal, callerID: payload.callerID });
+    const userSendingSignal = ({
+        userRequireAnswerSignal,
+        roomId,
+        userSendSignal,
+        signal, }) => {
+        io.emit(CHAT_CHANNELS.USER_RECEIVED_SIGNAL_IN_ROOM({ roomId }),
+            { userRequireAnswerSignal, signal, userSendSignal });
     };
-    const returningSignal = (payload) => {
-        io.to(payload.callerID).emit(CHAT_CHANNELS.USER_RECEIVED_RETURN_SIGNAL, { signal: payload.signal, id: socket.id });
+    const returningSignal = ({ roomId, signal, userReturnSignal, userReceiveReturnSignal }) => {
+        io.emit(CHAT_CHANNELS.USER_RECEIVED_RETURN_SIGNAL({ roomId }),
+            { signal, userReturnSignal, userReceiveReturnSignal });
     }
     const userChat = (data) => {
         const {
@@ -103,55 +103,88 @@ module.exports = (io, socket, users, rooms) => {
             .then((chatRoom) => {
                 if (chatRoom) {
                     const { users } = chatRoom;
-                    const index = users.findIndex(user => user.userId == userId);
+                    
+                    const index = users.findIndex(user => user.toString() == userId);
                     if (index > -1) {
                         const username = users[index].username;
+
                         if (users.length === 1) {
                             chatRoom.remove()
                                 .then(() => {
                                     io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
                                         message: 'chat room deleted',
+                                        roomId
                                     });
                                 })
                                 .catch(err => console.log(err));
                         } else {
                             users.splice(index, 1);
                             chatRoom.save()
-                                .then(() => {
-
-                                })
+                                .then(() => { })
                                 .catch(err => console.log(err));
                         }
                         io.emit(CHAT_CHANNELS.LEAVE_CHAT_ROOM({ roomId }), {
                             username,
                         });
                     } else {
-                        console.log('user not found');
+                        console.log('chatRoom.js,Line 128: user not found');
                     }
                 } else {
-                    console.log('chat room not found');
+                    console.log('chatRoom.js,Line 131:chat room not found');
                 }
             });
     }
+    const handleUserOffCall = () => {
+        const socketId = socket.id;
+        const roomId = findItemBySocketId(roomVideos, socketId).key;
+
+        if (roomId && roomVideos[roomId]) {
+            roomVideos[roomId] = roomVideos[roomId].filter(socket => socket != socketId);
+        }
+        io.emit(CHAT_CHANNELS.USER_OFF_CALL, {
+            socketId: socketId
+        });
+    }
     const handleSocketDisconnect = (data) => {
         const socketId = socket.id;
+        io.emit(CHAT_CHANNELS.USER_OFF_CALL, {
+            socketId
+        });
+        const filterNotCurrentSocket = socket => socket != socketId;
+
         try {
-            let userId = data?.userId??findItemBySocketId(users, socketId).key;
-            let roomId = data?.roomId??findItemBySocketId(rooms, socketId).key;
-            if (userId && roomId) {
-                users[userId] = users[userId].filter(socket => socket != socketId);
-                rooms[roomId] = rooms[roomId].filter(socket => socket != socketId);
-                if (users[userId].length < 1) {
-                    removeUserInRoom(roomId, userId);
-                }
-                io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
-                    message: 'user left',
-                });
+            let userId = data?.userId;
+            let roomId = data?.roomId;
+            let videoRoomId = data?.roomId;
+            if (!userId) {
+                userId = findItemBySocketId(users, socketId).key;
+            }
+            if (!roomId) {
+                roomId = findItemBySocketId(rooms, socketId).key;
+            }
+            if (!videoRoomId) {
+                videoRoomId = findItemBySocketId(roomVideos, socketId).key;
             }
 
+            if (videoRoomId&&roomVideos[videoRoomId]) {
+                roomVideos[videoRoomId] = roomVideos[videoRoomId].filter(filterNotCurrentSocket);
+            }
+            if (userId&&users[userId]) {
+                users[userId] = users[userId].filter(filterNotCurrentSocket);
+            }
+            if (roomId&&rooms[roomId]) {
+                rooms[roomId] = rooms[roomId].filter(filterNotCurrentSocket);
+            }
+            if (userId && (roomId || videoRoomId)) {
+                removeUserInRoom(roomId || videoRoomId, userId);
+                io.emit(CHAT_CHANNELS.REQUEST_UPDATE_CHATROOM, {
+                    message: 'user left',
+                    socketId: socketId
+                });
+            }
         }
         catch (e) {
-            //console.log(e);
+            console.log(e);
         }
     };
     const userLeave = (data) => {
@@ -164,6 +197,7 @@ module.exports = (io, socket, users, rooms) => {
         returningSignal,
         userChat,
         handleSocketDisconnect,
+        handleUserOffCall,
         userLeave,
     };
 }
