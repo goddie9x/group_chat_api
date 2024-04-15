@@ -1,7 +1,6 @@
 const CHAT_CHANNELS = {
     REQUEST_UPDATE_CHATROOM: 'chat-room:update',
     USER_CONNECTED: 'chat-room:user-connected',
-    USER_VIDEO_CONNECTED: 'chat-room:video-user-connected',
     NOTICE_CHATROOM_UPDATED_STATUS: 'chat-room:updated',
     SENDING_SIGNAL: 'chat-room:sending-signal',
     RETURNING_SIGNAL: 'chat-room:returning-signal',
@@ -10,7 +9,6 @@ const CHAT_CHANNELS = {
     NEW_MESSAGE: 'chat-room:user-chat',
     USER_RECEIVED_RETURN_SIGNAL: ({ roomId }) => 'chat-room:received-return-signal'+roomId,
     USER_RECEIVED_SIGNAL_IN_ROOM: ({ roomId }) => 'chat-room:received-signal' + roomId,
-    VIDEO_JOIN_CHAT_ROOM: ({ roomId }) => 'video-chat-room-join-' + roomId,
     SEND_MESSAGE_IN_ROOM: ({ roomId }) => 'chat-room-' + roomId + '-message',
     LEAVE_CHAT_ROOM: ({ roomId }) => 'chat-room-leave-' + roomId,
     JOIN_CHAT_ROOM: ({ roomId }) => 'chat-room-join-' + roomId,
