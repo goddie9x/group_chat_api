@@ -8,17 +8,18 @@ const PORT = process.env.PORT || 3001;
 const flash = require('connect-flash');
 const cookieParser = require('cookie-parser');
 const startAllSchedule = require('./app/schedules');
-const corsMiddleware = require('./app/middlewares/cors');
+const { ALLOWED_ORIGINS, corsMiddleware } = require('./app/middlewares/cors');
 const server = require('http').createServer(app);
 const getUserInfo = require('./app/middlewares/getUserInfo');
 const io = require('socket.io')(server, {
     cors: {
-        origin: '*',
+        origin: ALLOWED_ORIGINS,
         methods: ["GET", "POST"]
     }
 });
 const connectIo = require('./app/socket/index');
 
+app.use(corsMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
     express.urlencoded({
@@ -28,7 +29,6 @@ app.use(
 app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(flash());
-app.use(corsMiddleware);
 app.use(cookieParser());
 app.use(getUserInfo);
 

@@ -115,10 +115,10 @@ module.exports = (io, socket, users, rooms) => {
                         }
                         io.emit(CHAT_CHANNELS.LEAVE_CHAT_ROOM({ roomId }), userInfo);
                     } else {
-                        console.log('chatRoom.js,Line 128: user not found');
+                        console.log('chatRoom.js,Line 118: user not found');
                     }
                 } else {
-                    console.log('chatRoom.js,Line 131:chat room not found');
+                    console.log('chatRoom.js,Line 121:chat room not found');
                 }
             });
     }

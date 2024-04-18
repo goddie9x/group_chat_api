@@ -6,7 +6,7 @@ const ALLOWED_ORIGINS = [
     process.env.CORS_ALLOW5,
 ];
 
-module.exports = function corsMiddleware(req, res, next) {
+const corsMiddleware = (req, res, next) => {
     const origin = req.headers.origin;
     const isOriginAllowed = ALLOWED_ORIGINS.includes(origin);
     const theOrigin = (isOriginAllowed) ? origin : '*';
@@ -16,4 +16,8 @@ module.exports = function corsMiddleware(req, res, next) {
     res.header("Access-Control-Allow-Headers", isOriginAllowed ? "*" : '');
 
     next();
+}
+module.exports = {
+    corsMiddleware,
+    ALLOWED_ORIGINS
 }
