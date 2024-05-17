@@ -62,13 +62,14 @@ module.exports = (io, socket, users, rooms) => {
         userRequireAnswerSignal,
         roomId,
         userSendSignal,
-        signal, }) => {
+        signal,
+        peerVersion }) => {
         io.emit(CHAT_CHANNELS.USER_RECEIVED_SIGNAL_IN_ROOM({ roomId }),
-            { userRequireAnswerSignal, signal, userSendSignal });
+            { userRequireAnswerSignal, signal, userSendSignal, peerVersion });
     };
-    const returningSignal = ({ roomId, signal, userReturnSignal, userReceiveReturnSignal }) => {
+    const returningSignal = ({ roomId, signal, userReturnSignal, userReceiveReturnSignal, peerVersion }) => {
         io.emit(CHAT_CHANNELS.USER_RECEIVED_RETURN_SIGNAL({ roomId }),
-            { signal, userReturnSignal, userReceiveReturnSignal });
+            { signal, userReturnSignal, userReceiveReturnSignal, peerVersion });
     }
     const userChat = (data) => {
         const {
@@ -90,11 +91,12 @@ module.exports = (io, socket, users, rooms) => {
 
     const removeUserInRoom = (roomId, userId) => {
         ChatRoomModel.findById(roomId)
+            .populate('users')
             .then((chatRoom) => {
                 if (chatRoom) {
                     const { users } = chatRoom;
 
-                    const index = users.findIndex(user => user.toString() == userId);
+                    const index = users.findIndex(user => user._id == userId);
                     if (index > -1) {
                         const userInfo = users[index];
 
@@ -129,7 +131,7 @@ module.exports = (io, socket, users, rooms) => {
         try {
             let userId = data?.userId;
             let roomId = data?.roomId;
-            
+
             if (!userId) {
                 userId = findItemBySocketId(users, socketId).key;
             }

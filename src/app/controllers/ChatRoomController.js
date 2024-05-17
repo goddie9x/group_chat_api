@@ -1,4 +1,5 @@
 const ChatRoom = require('../models/ChatRoom');
+const mongoose = require('../../config/db');
 class ChatRoomController {
     index(req, res) {
         const page = req.params.page;
@@ -14,6 +15,7 @@ class ChatRoomController {
                 res.json(chatRooms);
             })
             .catch(err => {
+                console.log('line:17', err);
                 res.status(500).json(err);
             });
     }
@@ -36,12 +38,18 @@ class ChatRoomController {
     }
     search(req, res) {
         const search = req.query.search?.trim();
-        if (search == null || search.length < 1) {
+        if (!search || search.length < 1) {
             res.status(404).json('Not found');
         }
         else {
+            const criteria = {};
             const regex = '.*' + search + '.*';
-            ChatRoom.find({ $or: [{ tags: { $elemMatch: { $regex: regex } } }, { topic: { $regex: regex } }, { _id: { $regex: regex } }] })
+            criteria.$or = [{ tags: { $elemMatch: { $regex: regex, $options: 'i' } } }, { topic: { $regex: regex, $options: 'i' } }];
+
+            if (mongoose.Types.ObjectId.isValid(search)) {
+                criteria.$or.push({ _id: search })
+            }
+            ChatRoom.find(criteria)
                 .then(chatRooms => {
                     const rooms = chatRooms.map(chatRoom => {
                         return {
@@ -53,7 +61,7 @@ class ChatRoomController {
                     res.json(rooms);
                 })
                 .catch(err => {
-                    console.log(err);
+                    console.log('line 57:', err);
                     res.status(500).json(err);
                 });
         }
